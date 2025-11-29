@@ -1,0 +1,24 @@
+{
+  "name": "autocut-influencer",
+  "version": "1.0.0",
+  "description": "AI-powered video editing platform for creating viral short clips",
+  "private": true,
+  "scripts": {
+    "db:setup": "echo 'Please run the SQL files in database/ directory on your Supabase project'",
+    "db:migrate": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --local > types/database.types.ts"
+  },
+  "keywords": [
+    "video-editing",
+    "ai",
+    "nextjs",
+    "supabase",
+    "autocut"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "supabase": "^1.0.0"
+  }
+}

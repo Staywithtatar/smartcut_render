@@ -1,0 +1,7 @@
+fastapi==0.122.0
+uvicorn[standard]==0.38.0
+ffmpeg-python==0.2.0
+pillow==12.0.0
+python-multipart==0.0.20
+pydantic==2.12.5
+pydantic-settings==2.12.0
