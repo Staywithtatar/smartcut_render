@@ -41,16 +41,15 @@ BASE_DIR = Path(__file__).parent.parent
 TEMP_DIR = BASE_DIR / "temp"
 TEMP_DIR.mkdir(exist_ok=True)
 (TEMP_DIR / "uploads").mkdir(exist_ok=True)
-(TEMP_DIR / "processing").mkdir(exist_ok=True)
 (TEMP_DIR / "outputs").mkdir(exist_ok=True)
 
-# Pydantic models
 class EditingScript(BaseModel):
     """Editing script from AI analysis"""
     job_id: str
     jumpCuts: Optional[List[Dict]] = Field(default_factory=list)
     subtitles: Optional[List[Dict]] = Field(default_factory=list)
     highlights: Optional[List[Dict]] = Field(default_factory=list)
+    keywords: Optional[List[str]] = Field(default_factory=list)
     style: Optional[str] = Field(default="professional", description="Subtitle style: professional, viral, minimal")
     color_grading: Optional[str] = Field(default="vibrant", description="Color grading: vibrant, cinematic, natural")
     enable_zoom: Optional[bool] = Field(default=True, description="Enable zoom effects on highlights")
@@ -78,24 +77,6 @@ job_status: Dict[str, ProcessingStatus] = {}
 
 @app.get("/", response_model=Dict)
 def read_root():
-    """Health check endpoint"""
-    return {
-        "status": "running",
-        "message": "AutoCut Python Worker is ready!",
-        "version": "2.0.0",
-        "features": [
-            "Smart jump cuts with smooth transitions",
-            "Professional animated subtitles (3 styles)",
-            "Zoom effects on key moments",
-            "Color grading (3 presets)",
-            "Blurred background for better framing",
-            "Audio enhancement",
-            "9:16 aspect ratio conversion"
-        ]
-    }
-
-@app.get("/health", response_model=HealthResponse)
-def health_check():
     """Detailed health check"""
     import subprocess
     
@@ -253,7 +234,7 @@ async def process_video(
             job_status[job_id].progress = int((current_step_num / total_steps) * 100)
             logger.info(f"💬 Step {current_step_num}/{total_steps}: Adding subtitles")
             
-            current_video = processor.add_subtitles(script.subtitles, current_video, script.style)
+            current_video = processor.add_subtitles(script.subtitles, current_video, keywords=script.keywords)
             logger.info(f"✅ Subtitles added")
         
         # Step 5: Convert to 9:16 with blurred background
@@ -262,7 +243,7 @@ async def process_video(
         job_status[job_id].progress = int((current_step_num / total_steps) * 100)
         logger.info(f"📐 Step {current_step_num}/{total_steps}: Converting aspect ratio")
         
-        final_path = processor.change_aspect_ratio(current_video, '9:16')
+        final_path = processor.convert_aspect_ratio(current_video)
         logger.info(f"✅ Video processed successfully: {final_path}")
         
         # Update final status
@@ -385,22 +366,9 @@ async def shutdown_event():
 if __name__ == "__main__":
     import uvicorn
     
-    print("=" * 70)
-    print("🚀 AutoCut Python Worker - Production Ready")
-    print("=" * 70)
-    print(f"📁 Temp directory: {TEMP_DIR}")
-    print(f"🌐 Server: http://localhost:8000")
-    print(f"📖 API docs: http://localhost:8000/docs")
-    print(f"📊 Health check: http://localhost:8000/health")
-    print("=" * 70)
-    print("\n✨ Features:")
-    print("  • Smart jump cuts with smooth transitions")
-    print("  • Professional subtitles (3 styles)")
-    print("  • Zoom effects on key moments")
-    print("  • Color grading (vibrant/cinematic/natural)")
-    print("  • Blurred background for better framing")
-    print("  • 9:16 aspect ratio for TikTok/Reels")
-    print("\n🎬 Ready to process videos!\n")
+    print("  - Blurred background for better framing")
+    print("  - 9:16 aspect ratio for TikTok/Reels")
+    print("\nReady to process videos!\n")
     
     uvicorn.run(
         app,
