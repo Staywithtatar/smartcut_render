@@ -34,6 +34,13 @@ class SubtitleProcessor:
             subtitle_file = str(ass_path)
             logger.info(f"Applying subtitles from: {subtitle_file}")
             
+            # Validate ASS file exists and is readable
+            if not ass_path.exists():
+                raise FileNotFoundError(f"Subtitle file not found: {ass_path}")
+            
+            if ass_path.stat().st_size == 0:
+                raise ValueError(f"Subtitle file is empty: {ass_path}")
+            
             # Split audio and video to preserve audio
             input_stream = ffmpeg.input(str(video_path))
             video = input_stream.video.filter('subtitles', filename=subtitle_file)
@@ -43,14 +50,25 @@ class SubtitleProcessor:
                 ffmpeg
                 .output(video, audio, str(output), acodec='copy', loglevel='error')
                 .overwrite_output()
-                .run()
+                .run(capture_stdout=True, capture_stderr=True)
             )
+            
+            # Validate output was created
+            if not output.exists() or output.stat().st_size == 0:
+                raise RuntimeError(f"Subtitle output file not created or is empty: {output}")
+            
             logger.info(f"✅ Subtitles added ({len(self.config.segments)} segments)")
             return output
+            
         except ffmpeg.Error as e:
-            logger.error(f"Subtitle application failed: {e}")
-            logger.error(f"Subtitle file exists: {ass_path.exists()}")
-            return video_path
+            error_msg = f"FFmpeg subtitle error: {e.stderr.decode() if e.stderr else str(e)}"
+            logger.error(error_msg)
+            logger.error(f"Subtitle file: {ass_path}, exists: {ass_path.exists()}")
+            # Propagate error instead of silently returning original
+            raise RuntimeError(error_msg) from e
+        except Exception as e:
+            logger.error(f"Unexpected error in subtitle processing: {e}", exc_info=True)
+            raise
     
     def _create_ass_file(self) -> Path:
         """Create ASS subtitle file with AI styling"""

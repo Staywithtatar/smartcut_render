@@ -1,0 +1,3 @@
+[submodule "webfront"]
+	path = webfront
+	url = https://github.com/Staywithtatar/smartcut_web.git
